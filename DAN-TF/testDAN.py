@@ -11,6 +11,7 @@ from scipy import misc
 from scipy import ndimage
 from pylab import *
 import os
+import cv2
 
 datasetDir = "../data/"
 # testSet = ImageServer.Load(datasetDir + "commonSet.npz")
@@ -79,7 +80,7 @@ with tf.Session() as sess:
         # TestErr, S2_Ret = sess.run([dan['S2_Cost'],dan['S2_Ret']],{dan['InputImage']:Xtest,dan['GroundTruth']:Ytest,\
         #     dan['S1_isTrain']:False,dan['S2_isTrain']:False})
         # S2_Ret = np.reshape(S2_Ret, [-1, 68, 2])
-        TestErr, Landmark = sess.run([dan['S2_Cost'],dan['S2_Ret']],{dan['InputImage']:Xtest,dan['GroundTruth']:Ytest,\
+        TestErr, Landmark = sess.run([dan['S1_Cost'],dan['S1_Ret']],{dan['InputImage']:Xtest,dan['GroundTruth']:Ytest,\
              dan['S1_isTrain']:False,dan['S2_isTrain']:False})
         Landmark = np.reshape(Landmark, [-1, 68, 2])
         # errs.append(TestErr)
@@ -113,30 +114,20 @@ with tf.Session() as sess:
             
             A_temp = np.linalg.inv(A[i])
             t_temp = np.dot(np.reshape(-t[i],(1,2)), A_temp)
-            lankmark = Landmark[i]
-            lankmark = np.reshape(np.dot(lankmark, A_temp) + t_temp, [68, 2])
+            landmark = Landmark[i]
+            landmark = np.reshape(np.dot(landmark, A_temp) + t_temp, [68, 2])
             ptsFilename = testSet.filenames[i][:-3] + "pts"
             groundtruth = utils.loadFromPts(ptsFilename)
-            error = evaluateError(lankmark,groundtruth)
+            error = evaluateError(landmark,groundtruth)
             # print(error)
             errs.append(np.mean(error))
             '''
-            # draw prediction
-            img = misc.imread(testSet.filenames[i])
-            # img = testSet.imgs[i]
-            # img = np.reshape(img,(112,112))
-            imshow(img, cmap ='gray')
-            x=[]
-            y=[]
+            img = cv2.imread(testSet.filenames[i])
+            
             for point in range(68):
-                x.append(lankmark[point][0])
-                y.append(lankmark[point][1])
-            plot(x, y, 'r*')
-            savefig(os.path.join("../data/vis",testSet.filenames[i][-14:]))
-            # misc.imsave(os.path.join("../data/vis",testSet.filenames[i][-14:]), img)
-            clf()
-            cla()
-            close()
+                cv2.circle(img,( int(landmark[point][0]), int(landmark[point][1])),1,(0,255,255),3);
+            cv2.imwrite(os.path.join("../data/vis",testSet.filenames[i][-14:]),img)
+
             '''
         
         sorted_error = np.sort(errs, axis=0)

@@ -84,7 +84,7 @@ def DAN(MeanShapeNumpy):
         tf.summary.scalar('S1_Cost',S1_Cost)
         learning_rate = tf.train.exponential_decay(initial_learning_rate,global_step=global_step,decay_steps=100,decay_rate=0.95)
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS,'Stage1')):
-            S1_Optimizer = tf.train.AdamOptimizer(0.0001).minimize(S1_Cost,\
+            S1_Optimizer = tf.train.AdamOptimizer(0.001).minimize(S1_Cost,\
                 var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,"Stage1"))
         
     Ret_dict['S1_Ret'] = S1_Ret

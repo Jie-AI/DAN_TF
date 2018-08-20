@@ -79,7 +79,7 @@ initLandmarks = trainSet.initLandmarks[0].reshape((1, 136))
 
 dan = DAN(initLandmarks)
 
-STAGE = 2
+STAGE = 1
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     assert len(inputs) == len(targets)
@@ -98,8 +98,8 @@ with tf.Session() as sess:
     # merged = tf.summary.merge_all()
     Writer = tf.summary.FileWriter("logs/", sess.graph)
     if STAGE < 2:
-        Saver.restore(sess,'./Model/Model')
-        # sess.run(tf.global_variables_initializer())
+        # Saver.restore(sess,'./Model/Model')
+        sess.run(tf.global_variables_initializer())
     else:
         Saver.restore(sess,'./Model/Model')
         print('Pre-trained model has been loaded!')
@@ -107,8 +107,13 @@ with tf.Session() as sess:
     # Landmark68Test(MeanShape,ImageMean,ImageStd,sess)
     print("Starting training......")
     global_step = 0
+    errors=[]
+    errorsTrain=[]
+    errorsTest=[]
     for epoch in range(1000):
-        train_err = 0
+        epoch_train_err = 0
+        epoch_val_err=0
+        epoch_test_err=0
         Count = 0
         Batch_size = 64
         for batch in iterate_minibatches(Xtrain, Ytrain, Batch_size, True):
@@ -116,119 +121,58 @@ with tf.Session() as sess:
         # while Count * Batch_size < Xtrain.shape[0]:
             RandomIdx = np.random.choice(Xtrain.shape[0],Batch_size,False)
             if STAGE == 1 or STAGE == 0:
-                sess.run(dan['S1_Optimizer'], feed_dict={dan['InputImage']:inputs,\
+                BatchErr,_ = sess.run([dan['S1_Cost'],dan['S1_Optimizer']], feed_dict={dan['InputImage']:inputs,\
                     dan['GroundTruth']:targets,dan['S1_isTrain']:True,dan['S2_isTrain']:False,dan['global_step']:global_step})
-                # writer.add_summary(merge,i)
+                ValidErr= sess.run(dan['S1_Cost'], {dan['InputImage']:Xvalid,dan['GroundTruth']:Yvalid,\
+                        dan['S1_isTrain']:False,dan['S2_isTrain']:False})
+                TestErr= sess.run(dan['S1_Cost'], {dan['InputImage']:Xtest,dan['GroundTruth']:Ytest,\
+                        dan['S1_isTrain']:False,dan['S2_isTrain']:False})
+                file=open('../batch_losses_2.txt','a')
+                file.write('%d epoch %d batch the batch_error is %f\n' % (epoch,Count,BatchErr))
+                file.close()
+                file=open('../val_losses_2.txt','a')
+                file.write('%d epoch %d batch the val_error is %f\n' % (epoch,Count,ValidErr))
+                file.close()
+                file=open('../test_losses_2.txt','a')
+                file.write('%d epoch %d batch the test_error is %f\n' % (epoch,Count,TestErr))
+                file.close()
             else:
                 sess.run(dan['S2_Optimizer'], feed_dict={dan['InputImage']:inputs,\
                     dan['GroundTruth']:targets,dan['S1_isTrain']:False,dan['S2_isTrain']:True})
-                
-                # writer.add_summary(merge,i)
+            epoch_train_err += BatchErr
+            epoch_val_err += ValidErr
+            epoch_test_err += TestErr
+            '''
             if Count % 40 == 0:
-                ValidErr = 0
-                BatchErr = 0
-
                 if STAGE == 1 or STAGE == 0:
                     ValidErr, Landmark= sess.run([dan['S1_Cost'],dan['S1_Ret']], {dan['InputImage']:Xvalid,dan['GroundTruth']:Yvalid,\
                         dan['S1_isTrain']:False,dan['S2_isTrain']:False})
-                    
-                    '''
-                    if Count%200==0 and Count!=0:
-                        Landmark= np.reshape(Landmark, [-1, 68, 2])
-                        # for i in range(len(validationSet.filenames)):
-                        for i in range(30):
-                            # draw prediction
-                            img = testSet.imgs[i]
-                            img = np.reshape(img,(112,112))
-                            imshow(img, cmap ='gray')
-                            x=[]
-                            y=[]
-                            for point in range(68):
-                                x.append(Landmark[i][point][0])
-                                y.append(Landmark[i][point][1])
-                            plot(x, y, 'r*')
-                            savefig(os.path.join("../data/vis",testSet.filenames[i][-14:]))
-                            # misc.imsave(os.path.join("../data/vis",testSet.filenames[i][-14:]), img)
-                            clf()
-                            cla()
-                            close()
-                            # draw groundtruth
-                            gtLandmarks = testSet.gtLandmarks
-                            img = testSet.imgs[i]
-                            img = np.reshape(img,(112,112))
-                            imshow(img, cmap ='gray')
-                            x=[]
-                            y=[]
-                            for point in range(68):
-                                x.append(gtLandmarks[i][point][0])
-                                y.append(gtLandmarks[i][point][1])
-                            plot(x, y, 'r*')
-                            filename = testSet.filenames[i][-14:-3] +'_groundTrue.png'
-                            savefig(os.path.join("../data/vis",filename))
-                            # misc.imsave(os.path.join("../data/vis",testSet.filenames[i][-14:]), img)
-                            clf()
-                            cla()
-                            close()
-                    '''
-                    # print(evaluateBatchError(Ytest.reshape([-1, 68, 2]), Landmark.reshape([-1, 68, 2]), Batch_size))
-
-                    BatchErr = sess.run(dan['S1_Cost'],{dan['InputImage']:inputs,\
-                        dan['GroundTruth']:targets,dan['S1_isTrain']:False,dan['S2_isTrain']:False})
-                    train_err += BatchErr
-                
+                    idxs=range(1000)
+                    idxs = np.array_split(idxs, 10)
+                    error=0
+                    for i in range(len(idxs)):
+                        TrainErr = sess.run(dan['S1_Cost'],{dan['InputImage']:Xtrain[idxs],\
+                            dan['GroundTruth']:Ytrain[idxs],dan['S1_isTrain']:False,dan['S2_isTrain']:False})
+                        error += TrainErr
+                    error = error / len(idxs)
                 else:
                     ValidErr ,Landmark = sess.run([dan['S2_Cost'],dan['S2_Ret']],{dan['InputImage']:Xvalid,dan['GroundTruth']:Yvalid,\
                         dan['S1_isTrain']:False,dan['S2_isTrain']:False})
-                    
-                    '''
-                    if epoch%5==0:
-                        Landmark= np.reshape(Landmark, [-1, 68, 2])
-                        for i in range(len(validationSet.filenames)):
-                            # draw prediction
-                            img = validationSet.imgs[i]
-                            img = np.reshape(img,(112,112))
-                            imshow(img, cmap ='gray')
-                            x=[]
-                            y=[]
-                            for point in range(68):
-                                x.append(Landmark[i][point][0])
-                                y.append(Landmark[i][point][1])
-                            plot(x, y, 'r*')
-                            savefig(os.path.join("../data/vis",validationSet.filenames[i][-14:]))
-                            # misc.imsave(os.path.join("../data/vis",testSet.filenames[i][-14:]), img)
-                            clf()
-                            cla()
-                            close()
-                            # draw groundtruth
-                            gtLandmarks = validationSet.gtLandmarks
-                            img = validationSet.imgs[i]
-                            img = np.reshape(img,(112,112))
-                            imshow(img, cmap ='gray')
-                            x=[]
-                            y=[]
-                            for point in range(68):
-                                x.append(gtLandmarks[i][point][0])
-                                y.append(gtLandmarks[i][point][1])
-                            plot(x, y, 'r*')
-                            filename = validationSet.filenames[i][-14:-3] +'_groundTrue.png'
-                            savefig(os.path.join("../data/vis",filename))
-                            # misc.imsave(os.path.join("../data/vis",testSet.filenames[i][-14:]), img)
-                            clf()
-                            cla()
-                            close()
-                    '''
-                    # print(evaluateBatchError(Ytest.reshape([-1, 68, 2]), Landmark.reshape([-1, 68, 2]), Batch_size))
-                    BatchErr = sess.run(dan['S2_Cost'],{dan['InputImage']:inputs,\
-                        dan['GroundTruth']:targets,dan['S1_isTrain']:False,dan['S2_isTrain']:False})
-                    train_err += BatchErr
-                print('Epoch: ', epoch, ' Batch: ', Count, 'ValidErr:', ValidErr, ' BatchErr:', BatchErr)
-                file=open('../stage_2_train_losses.txt','a')
-                file.write('%f\n' % BatchErr)
-                file.close()
-                file=open('../stage_2_val_losses.txt','a')
-                file.write('%f\n' % ValidErr)
-                file.close()
+                    TrainErr = sess.run(dan['S2_Cost'],{dan['InputImage']:Xtrain,\
+                        dan['GroundTruth']:Ytrain,dan['S1_isTrain']:False,dan['S2_isTrain']:False})
+                print('Epoch: ', epoch, ' Batch: ', Count, 'ValidErr:', ValidErr, ' TrainErr:', TrainErr)
+                
+            '''
             Count += 1
             global_step +=1 
-        Saver.save(sess,'./Model_Stage2/Model')
-        print('Epoch: ', epoch, ' Train_error:', train_err * 40 /Count)
+        errors.append(epoch_val_err)
+        errorsTrain.append(epoch_train_err)
+        plot(errors)
+        plot(errorsTrain)
+        plot(epoch_test_err)
+        # ylim(ymax=np.max( [errors[0], errorsTrain[0], errorsTest[0]]))
+        ylim(ymax=0.5)
+        savefig("../errors_perEpoch_2.jpg")
+        clf()
+        Saver.save(sess,'./checkpoints_2/Model_%d/Model' % epoch)
+        print('Epoch: ', epoch, ' Train_error:', epoch_train_err /Count , ' Value_error:' , epoch_val_err/Count , 'Test_error:' , epoch_test_err/Count)

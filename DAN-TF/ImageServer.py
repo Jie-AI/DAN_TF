@@ -2,7 +2,7 @@
 from scipy import ndimage
 import numpy as np
 import utils
-from six.moves import cPickle as pickle
+import pickle
 import glob
 from os import path
 
@@ -275,8 +275,8 @@ class ImageServer(object):
         # 将meanShape映射至112*112图像中
         # initShape是投射至boundingbox的中心后的
         A, t = utils.bestFit(destShape, initShape, True) # 得到能够将initShape缩放至destShape的比例
-        # self.A.append(A)
-        # self.t.append(t)
+        self.A.append(A)
+        self.t.append(t)
         A2 = np.linalg.inv(A) # 矩阵求逆
         t2 = np.dot(-t, A2) 
 
