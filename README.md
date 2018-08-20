@@ -1,5 +1,5 @@
-# Deep-Alignment-Network-tensorflow
-A re-implementation of Deep-Alignment-Network using TensorFlow
+# Deep-Alignment-Network_tensorflow
+A re-implementation of Deep-Alignment-Network-tensorflow
 
 ## Requirements
 
