@@ -15,18 +15,17 @@ w300SetImageDirs = ["../data/images/300w/01_Indoor/", "../data/images/300w/02_Ou
 w300SetBoundingBoxFiles = ["../data/boxes300WIndoor.pkl", "../data/boxes300WOutdoor.pkl"]
 
 datasetDir = "../data/"
-trainSet = ImageServer.Load(datasetDir + "dataset_nimgs=62960_perturbations=[0.2, 0.2, 20, 0.25]_size=[112, 112].npz")
+trainSet = ImageServer.Load(datasetDir + "dataset_nimgs=60960_perturbations=[0.2, 0.2, 20, 0.25]_size=[112, 112].npz")
 meanShape = np.load("../data/meanFaceShape.npz")["meanShape"]
  
 # print(meanShape.shape)  (68,2)
-'''
 commonSet = ImageServer(initialization='box')
 commonSet.PrepareData(commonSetImageDirs, commonSetBoundingBoxFiles, meanShape, 0, 1000, False)
 commonSet.LoadImages()
 commonSet.CropResizeRotateAll()
 commonSet.imgs = commonSet.imgs.astype(np.float32)
 commonSet.NormalizeImages(trainSet) #去均值，除以标准差
-# commonSet.NormalizeImages()
+commonSet.NormalizeImages()
 commonSet.Save(datasetDir, "commonSet.npz")
 
 
@@ -37,7 +36,6 @@ challengingSet.CropResizeRotateAll()
 challengingSet.imgs = challengingSet.imgs.astype(np.float32)
 challengingSet.NormalizeImages() #去均值，除以标准差
 challengingSet.Save(datasetDir, "challengingSet.npz")
-'''
 w300Set = ImageServer(initialization='box')
 w300Set.PrepareData(w300SetImageDirs, w300SetBoundingBoxFiles, meanShape, 0, 1000, False)
 w300Set.LoadImages()

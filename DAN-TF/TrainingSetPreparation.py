@@ -11,13 +11,16 @@ meanShape = np.load("../data/meanFaceShape.npz")["meanShape"]
 
 print("Load trainSet")
 trainSet = ImageServer(initialization='rect')#相当于没有用bbx做训练，直接用的特征点截取框
+print('trainset')
 trainSet.PrepareData(imageDirs, None, meanShape, 100, 100000, True)#准备好图片名list，对应图片landmark的list，和对应图片的bbx的list，和meanshape。令我疑惑的是，startIdx=100，nImgs=100000，,300W数据集可没有那么多图片
+print('load immage')
 trainSet.LoadImages()#读取图片，并对每张图调整好meanShape
 trainSet.GeneratePerturbations(10, [0.2, 0.2, 20, 0.25])#位移0.2，旋转20度，放缩+-0.25
-# import pdb; pdb.set_trace()
+print('transfrom')
 trainSet.NormalizeImages()#去均值，除以标准差
+print('normalize')
 trainSet.Save(datasetDir)#保存成字典形式，key为'imgs'，'initlandmarks'，'gtlandmarks'
-
+print('trainset saved')
 
 print("Load validationSet")
 validationSet = ImageServer(initialization='box')

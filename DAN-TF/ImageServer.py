@@ -13,7 +13,8 @@ class ImageServer(object):
         self.filenames = []
         self.mirrors = []
         self.meanShape = np.array([])
-
+        self.A = []
+        self.t = []
         self.meanImg = np.array([])
         self.stdDevImg = np.array([])
 
@@ -90,7 +91,7 @@ class ImageServer(object):
 
                 if boundingBoxFiles is not None:
                     basename = path.basename(filenamesInDir[j])
-                    if boundingBoxDict.get(basename)==None:
+                    if boundingBoxDict.get(basename).all()==None:
                         print(basename)
                         continue
                     boundingBoxes.append(boundingBoxDict[basename])
@@ -122,7 +123,9 @@ class ImageServer(object):
         self.gtLandmarks = []
 
         for i in range(len(self.filenames)):
-            #这段代码写得不好，self.color并没有实际意义
+           #这段代码写得不好，self.color并没有实际意
+            if i%100==0:
+                print(i)
             img = ndimage.imread(self.filenames[i])
             if self.color:
             	
@@ -247,6 +250,7 @@ class ImageServer(object):
             # plt.imshow(np.transpose(meanImg, (1, 2, 0)))
             plt.imshow(meanImg)
         else:
+            print(meanImg)
             plt.imshow(meanImg[:,:,0], cmap=plt.cm.gray)
         plt.savefig("../meanImg.jpg")
         plt.clf()

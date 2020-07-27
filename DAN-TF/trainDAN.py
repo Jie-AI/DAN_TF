@@ -13,7 +13,7 @@ from pylab import *
 import os
 
 datasetDir = "../data/"
-trainSet = ImageServer.Load(datasetDir + "dataset_nimgs=62960_perturbations=[0.2, 0.2, 20, 0.25]_size=[112, 112].npz")
+trainSet = ImageServer.Load(datasetDir + "dataset_nimgs=60960_perturbations=[0.2, 0.2, 20, 0.25]_size=[112, 112].npz")
 # validationSet = ImageServer.Load(datasetDir + "dataset_nimgs=9_perturbations=[]_size=[112, 112].npz")
 validationSet = ImageServer.Load(datasetDir + "dataset_nimgs=100_perturbations=[]_size=[112, 112].npz")
 
